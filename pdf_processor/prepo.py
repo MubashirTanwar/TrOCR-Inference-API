@@ -93,7 +93,6 @@ def process_image(img_path, output_dir, page_num):
     sorted_contours = sorted(contours, key=lambda c: cv2.boundingRect(c)[1])
     img_contours = original_img.copy()
     cv2.drawContours(img_contours, sorted_contours, -1, (0, 255, 0), 1)
-    cv2.imwrite(os.path.join(output_dir, f'contours/page{page_num+1}_contours.png'), img_contours)
 
     x1=1
     boxes = []
@@ -137,18 +136,19 @@ def process_image(img_path, output_dir, page_num):
                         warped = cv2.rotate(warped, cv2.ROTATE_90_CLOCKWISE)
 
                     # Save the cropped image
-                    cv2.imwrite(os.path.join(output_dir, f'page_{page_num + 74}_line_{x1}.png'), warped)
+                    cv2.imwrite(os.path.join(output_dir, f'page_{page_num+1}_line_{x1}.png'), warped)
                     x1+=1
                     boxes.append(box) 
-
+                
     # image with bounding boxes
-    print(len(boxes))
+        
     for box in boxes:
         cv2.drawContours(original_img,[box],0,(0,255,0),1, lineType=cv2.LINE_AA)
-    filename = os.path.join(output_dir, f'bound/page{page_num+1}_bounding_boxes.png')
+    filename = os.path.join(output_dir, f'page{page_num}_bounding_boxes.png')
     cv2.imwrite(filename, original_img)
     print('Saved as', filename)
-    pass
+    return len(boxes)
+    
 
 
 def main(pdf_path, output_directory):

@@ -5,4 +5,5 @@ class PDFDocument(models.Model):
 
 class ExtractedLine(models.Model):
     pdf_document = models.ForeignKey(PDFDocument, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='extracted_images/')
+    image = models.ImageField(upload_to='output_images/')
+    text = models.TextField(null=True, blank=True)

@@ -4,7 +4,9 @@ from rest_framework import status
 import os
 from .prepo import extract_pages_from_pdf
 from .prepo import process_image
-
+from .models import PDFDocument, ExtractedLine
+from .test import preview
+from .wordbox import get_string
 @api_view(['POST'])
 def extract_lines(request):
     if request.method == 'POST':
@@ -15,13 +17,21 @@ def extract_lines(request):
             os.makedirs(temp_dir)
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        pdf_path = os.path.join(temp_dir, 'uploaded_pdf.pdf')
-        with open(pdf_path, 'wb') as f:
-            f.write(pdf_file.read())
+        uploaded_pdf = PDFDocument(file=pdf_file)
+        uploaded_pdf.save()
+        pdf_path = uploaded_pdf.file.path 
         page_images = extract_pages_from_pdf(pdf_path, temp_dir)
-        num_lines = 0
+        
+        text = ""
         for page_num, page_image in enumerate(page_images):
-            process_image(page_image, output_dir, page_num)
-            num_lines += len([name for name in os.listdir(output_dir) if os.path.isfile(os.path.join(output_dir, name))])
-        return Response({'num_lines': num_lines}, status=status.HTTP_200_OK)
-    return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            num_lines = 0
+            total_lines = get_string(page_image, output_dir, page_num)
+            for num_lines, filename in enumerate(sorted(os.listdir(output_dir)), start=1):
+                img_path = os.path.join(output_dir, filename)
+                text += " " + preview(img_path)
+                total_lines -= 1
+                print(text)
+                extracted_lines = ExtractedLine(pdf_document=uploaded_pdf, image=img_path, text=f"{num_lines} lines")
+                extracted_lines.save()
+            return Response({'num_lines': total_lines, 'text' : text}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
